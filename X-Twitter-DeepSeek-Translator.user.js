@@ -3,7 +3,7 @@
 // @namespace    https://github.com/comdotwww/X-Twitter-DeepSeek-Translator
 // @version      1.4
 // @description  使用DeepSeek API翻译推文
-// @author       comdotwww
+// @author       TXBB
 // @match        https://twitter.com/*
 // @match        https://x.com/*
 // @grant        GM_xmlhttpRequest
@@ -117,7 +117,7 @@
         deriveKey(password, salt) {
             const encoder = new TextEncoder();
             const keyMaterial = encoder.encode(password + salt);
-
+            
             // 简单的密钥派生函数（在实际应用中可以使用更复杂的方法）
             let key = '';
             for (let i = 0; i < keyMaterial.length; i++) {
@@ -131,13 +131,13 @@
             try {
                 const salt = this.generateSalt();
                 const key = this.deriveKey(password, salt);
-
+                
                 let result = '';
                 for (let i = 0; i < text.length; i++) {
                     const charCode = text.charCodeAt(i) ^ key.charCodeAt(i % key.length);
                     result += String.fromCharCode(charCode);
                 }
-
+                
                 // 返回 salt + 加密数据
                 return salt + btoa(result);
             } catch (error) {
@@ -152,19 +152,19 @@
                 if (!encryptedText || encryptedText.length < 16) {
                     return null;
                 }
-
+                
                 const salt = encryptedText.substring(0, 16);
                 const encryptedData = encryptedText.substring(16);
-
+                
                 const key = this.deriveKey(password, salt);
                 const decodedData = atob(encryptedData);
-
+                
                 let result = '';
                 for (let i = 0; i < decodedData.length; i++) {
                     const charCode = decodedData.charCodeAt(i) ^ key.charCodeAt(i % key.length);
                     result += String.fromCharCode(charCode);
                 }
-
+                
                 return result;
             } catch (error) {
                 console.error('解密失败:', error);
@@ -188,7 +188,7 @@
 
         const bodyStyle = window.getComputedStyle(document.body);
         const bgColor = bodyStyle.backgroundColor;
-
+        
         if (bgColor.includes('rgb(21, 32, 43)') || bgColor.includes('#15202b')) {
             return 'dim';
         } else if (bgColor.includes('rgb(0, 0, 0)') || bgColor.includes('black')) {
@@ -202,11 +202,11 @@
     function getCurrentTheme() {
         const config = getConfig();
         let theme = config.THEME;
-
+        
         if (theme === 'auto') {
             theme = detectTheme();
         }
-
+        
         return THEMES[theme] || THEMES.light;
     }
 
@@ -227,7 +227,7 @@
         if (!config.ENCRYPTED_API_KEY || !config.ENCRYPTION_KEY) {
             return '';
         }
-
+        
         const decrypted = CryptoUtils.decrypt(config.ENCRYPTED_API_KEY, config.ENCRYPTION_KEY);
         return decrypted || '';
     }
@@ -237,17 +237,17 @@
         if (!CryptoUtils.validateEncryptionKey(encryptionKey)) {
             throw new Error('加密密钥必须为8-32位字符');
         }
-
+        
         const encrypted = CryptoUtils.encrypt(apiKey, encryptionKey);
         if (!encrypted) {
             throw new Error('加密失败');
         }
-
+        
         const config = getConfig();
         config.ENCRYPTED_API_KEY = encrypted;
         config.ENCRYPTION_KEY = encryptionKey;
         saveConfig(config);
-
+        
         return true;
     }
 
@@ -376,10 +376,10 @@
 
         // API密钥配置
         const apiKeySection = createConfigSection('API密钥配置', '请输入您的DeepSeek API密钥和加密密钥：', theme);
-
+        
         const encryptionKeyInput = createTextInput('加密密钥（8-32位字符）', config.ENCRYPTION_KEY, true, theme);
         encryptionKeyInput.title = '请设置一个8-32位的加密密钥，用于保护您的API密钥';
-
+        
         const apiKeyInput = createTextInput('DeepSeek API密钥', '', true, theme);
         apiKeyInput.placeholder = '输入新的API密钥（留空则保持现有密钥）';
         apiKeyInput.title = '输入新的API密钥，将使用上面的加密密钥进行加密存储';
@@ -397,7 +397,7 @@
             border-radius: 4px;
             background: ${theme.bgSecondary};
         `;
-
+        
         const decryptedKey = getDecryptedApiKey();
         if (decryptedKey) {
             keyStatus.textContent = `✅ API密钥已加密存储（${decryptedKey.length > 4 ? decryptedKey.substring(0, 4) + '...' + decryptedKey.substring(decryptedKey.length - 4) : '已设置'}）`;
@@ -425,7 +425,7 @@
 
         // 提示词选择
         const promptSection = createConfigSection('翻译提示词', '选择或自定义翻译提示词：', theme);
-
+        
         const presetSelect = createSelect([
             { value: 'custom', label: '自定义提示词' },
             ...Object.keys(PRESET_PROMPTS).map(key => ({
@@ -433,7 +433,7 @@
                 label: PRESET_PROMPTS[key].name
             }))
         ], 'custom', theme);
-
+        
         presetSelect.onchange = (e) => {
             if (e.target.value !== 'custom') {
                 promptTextarea.value = PRESET_PROMPTS[e.target.value].content;
@@ -466,10 +466,10 @@
 
         // 功能设置
         const featureSection = createConfigSection('功能设置', '', theme);
-
+        
         const autoTranslateCheckbox = createCheckbox('自动翻译新推文', config.AUTO_TRANSLATE, theme);
         const showLoadingCheckbox = createCheckbox('显示翻译中提示', config.SHOW_LOADING, theme);
-
+        
         featureSection.appendChild(autoTranslateCheckbox);
         featureSection.appendChild(showLoadingCheckbox);
 
@@ -508,19 +508,19 @@
                     if (!CryptoUtils.validateEncryptionKey(encryptionKeyInput.value)) {
                         throw new Error('加密密钥必须为8-32位字符');
                     }
-
+                    
                     const apiKeyToSave = apiKeyInput.value || getDecryptedApiKey();
                     if (!apiKeyToSave) {
                         throw new Error('请输入API密钥');
                     }
-
+                    
                     encryptAndSaveApiKey(apiKeyToSave, encryptionKeyInput.value);
                 }
 
                 // 保存其他配置
                 newConfig.ENCRYPTION_KEY = encryptionKeyInput.value;
                 saveConfig(newConfig);
-
+                
                 panel.remove();
                 overlay.remove();
                 showNotification('配置已保存！', 'success', theme);
@@ -573,8 +573,8 @@
             const descEl = document.createElement('p');
             descEl.textContent = description;
             descEl.style.cssText = `
-                margin: 0 0 12px 0;
-                color: ${theme.textSecondary};
+                margin: 0 0 12px 0; 
+                color: ${theme.textSecondary}; 
                 font-size: 14px;
                 line-height: 1.4;
             `;
@@ -604,7 +604,7 @@
         `;
         input.onfocus = () => input.style.borderColor = theme.accent;
         input.onblur = () => input.style.borderColor = theme.border;
-
+        
         return input;
     }
 
@@ -673,7 +673,7 @@
         const button = document.createElement('button');
         button.textContent = text;
         button.type = 'button';
-
+        
         const isPrimary = type === 'primary';
         button.style.cssText = `
             padding: 10px 20px;
@@ -687,7 +687,7 @@
             color: ${isPrimary ? '#ffffff' : theme.textPrimary};
             border: ${isPrimary ? 'none' : `1px solid ${theme.border}`};
         `;
-
+        
         button.onmouseover = () => {
             button.style.background = isPrimary ? theme.accentHover : theme.bgSecondary;
         };
@@ -702,7 +702,7 @@
     function testConnection(encryptionKey, newApiKey) {
         try {
             let apiKeyToTest;
-
+            
             if (newApiKey) {
                 // 测试新输入的API密钥
                 apiKeyToTest = newApiKey;
@@ -757,10 +757,10 @@
     // 显示通知
     function showNotification(message, type = 'info', theme = null) {
         if (!theme) theme = getCurrentTheme();
-
+        
         const notification = document.createElement('div');
         const bgColor = type === 'error' ? theme.error : type === 'success' ? theme.success : theme.accent;
-
+        
         notification.textContent = message;
         notification.style.cssText = `
             position: fixed;
@@ -796,7 +796,7 @@
     // 添加配置按钮到页面
     function addConfigButton() {
         if (document.getElementById('deepseek-config-button')) return;
-
+        
         const theme = getCurrentTheme();
         const button = document.createElement('button');
         button.id = 'deepseek-config-button';
@@ -849,7 +849,7 @@
     function restoreTranslation(tweetElement) {
         const tweetId = getTweetId(tweetElement);
         const originalText = getTweetText(tweetElement);
-
+        
         if (originalText) {
             const cachedTranslation = GM_getValue(`translation_${tweetId}`);
             if (cachedTranslation) {
@@ -864,12 +864,12 @@
     function observeTimeline() {
         const observer = new MutationObserver((mutations) => {
             let shouldScan = false;
-
+            
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === 1) {
                         if (node.querySelector && (
-                            node.querySelector('article[data-testid="tweet"]') ||
+                            node.querySelector('article[data-testid="tweet"]') || 
                             node.querySelector('div[data-testid="tweet"]')
                         )) {
                             shouldScan = true;
@@ -932,9 +932,9 @@
     async function translateTweet(tweetElement, tweetId) {
         const config = getConfig();
         if (!config.AUTO_TRANSLATE) return;
-
+        
         const originalText = getTweetText(tweetElement);
-
+        
         if (!originalText || originalText.length < 5) {
             return;
         }
@@ -944,23 +944,23 @@
         }
 
         saveTranslatedTweet(tweetId);
-
+        
         try {
             if (config.SHOW_LOADING) {
                 showLoadingIndicator(tweetElement);
             }
-
+            
             const apiKey = getDecryptedApiKey();
             if (!apiKey) {
                 throw new Error('请先配置API密钥');
             }
-
+            
             const translatedText = await callDeepSeekAPI(originalText, apiKey);
-
+            
             if (config.SHOW_LOADING) {
                 removeLoadingIndicator(tweetElement);
             }
-
+            
             if (translatedText) {
                 GM_setValue(`translation_${tweetId}`, translatedText);
                 displayTranslation(tweetElement, translatedText, originalText);
@@ -983,7 +983,7 @@
             padding: 8px;
             font-size: 12px;
         `;
-
+        
         const textContainer = findTextContainer(tweetElement);
         if (textContainer && textContainer.parentNode) {
             textContainer.parentNode.insertBefore(loadingDiv, textContainer.nextSibling);
@@ -1000,7 +1000,7 @@
     function callDeepSeekAPI(text, apiKey) {
         return new Promise((resolve, reject) => {
             const config = getConfig();
-
+            
             if (!apiKey) {
                 reject(new Error('请先配置DeepSeek API密钥'));
                 return;
@@ -1050,7 +1050,7 @@
 
     // 查找文本容器
     function findTextContainer(tweetElement) {
-        return tweetElement.querySelector('div[data-testid="tweetText"]') ||
+        return tweetElement.querySelector('div[data-testid="tweetText"]') || 
                tweetElement.querySelector('[data-testid="tweetText"]') ||
                tweetElement;
     }
@@ -1058,7 +1058,7 @@
     // 显示翻译结果
     function displayTranslation(tweetElement, translatedText, originalText) {
         const theme = getCurrentTheme();
-
+        
         const existingTranslation = tweetElement.querySelector('.deepseek-translation');
         if (existingTranslation) {
             existingTranslation.remove();
@@ -1145,15 +1145,15 @@
     // 主函数：初始化并开始监听
     function init() {
         console.log('DeepSeek翻译器已启动');
-
+        
         GM_registerMenuCommand('配置DeepSeek翻译器', showConfigPanel);
         GM_registerMenuCommand('清除翻译缓存', clearTranslationCache);
         GM_registerMenuCommand('安全清理', secureCleanup);
-
+        
         scanExistingTweets();
         observeTimeline();
         addConfigButton();
-
+        
         // 定期更新配置按钮样式
         setInterval(() => {
             const button = document.getElementById('deepseek-config-button');
